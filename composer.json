@@ -1,0 +1,12 @@
+{
+    "name": "nette-caching-ext",
+    "license": "GPL3",
+    "authors": [
+        {
+            "name": "Simeon Ackermann",
+            "email": "amseon@web.de",
+            "homepage": "http://asimeon.de",
+            "role": "Developer"
+        }
+    ]
+}
