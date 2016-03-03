@@ -16,21 +16,37 @@ use Nette\Caching\Cache;
  */
 class APCStorage extends Nette\Object implements Nette\Caching\IStorage
 {
-	/**
-	 * Checks if MongoDB extension is available.
-	 * @return bool
-	 */
-	public static function isAvailable()
-	{
-		return extension_loaded('apc');
-	}
-
+	/** @var String ("apc|apcu") */
+	private static $usedExtension;
 
 	public function __construct()
 	{
-		if (!static::isAvailable()) {
-			throw new Nette\NotSupportedException("PHP extension 'apc' is not loaded.");
+		if (static::isAvailable('apcu')) {
+			static::$usedExtension = "apcu";
+		} elseif (static::isAvailable('apc')) {
+			static::$usedExtension = "apc";
+		} else {
+			throw new Nette\NotSupportedException("Neither 'apcu' nor 'apc' as PHP extension is available.");
 		}
+	}
+
+	/**
+	 * Checks if MongoDB extension is available.
+	 * @param string extension (apc|apcu)
+	 * @return bool
+	 */
+	public static function isAvailable($ext='apc')
+	{
+		return extension_loaded($ext);
+	}
+
+	/**
+	 * Get used extension (APCu or APC)
+	 * @return string (apcu|apc)
+	 */
+	public static function getUsedExtension()
+	{
+		return static::$usedExtension;
 	}
 
 	/**
@@ -40,7 +56,8 @@ class APCStorage extends Nette\Object implements Nette\Caching\IStorage
 	 */
 	public function read($key)
 	{
-		$data = apc_fetch($key);
+
+		$data = ( static::$usedExtension == "apcu" ) ? apcu_fetch($key) : apc_fetch($key);
 
 		// TODO: expire & slide. ...
 		
@@ -75,8 +92,11 @@ class APCStorage extends Nette\Object implements Nette\Caching\IStorage
 			'expire' => $expire,
 			'slide' => $slide
 		);
-
-		apc_store($key, $data);
+		if ( static::$usedExtension == "apcu" ) {
+			apcu_store($key, $data);
+		} else {
+			apc_store($key, $data);
+		}
 
 		// TODO: tags
 	}
